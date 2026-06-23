@@ -50,8 +50,54 @@ int users_next_id(const UserList *users) {
 
 int register_user(Bank *bank, const char *name, const char *pass) { (void)bank; (void)name; (void)pass; return 0; }
 int login_user(const UserList *users, const char *name, const char *pass) { (void)users; (void)name; (void)pass; return -1; }
-void users_load(UserList *users, const char *path) { (void)users; (void)path; }
-void users_save(const UserList *users, const char *path) { (void)users; (void)path; }
+void users_load(UserList *users, const char *path) {
+    users->items = NULL;
+    users->count = 0;
+    users->capacity = 0;
+
+    FILE *f = fopen(path, "rb");
+    if (!f) {
+        return;
+    }
+
+    size_t count = 0;
+    if (fread(&count, sizeof(size_t), 1, f) != 1) {
+        fclose(f);
+        return;
+    }
+
+    if (count > 0) {
+        users->items = malloc(count * sizeof(User));
+        if (!users->items) {
+            perror("Failed to allocate memory in users_load");
+            fclose(f);
+            exit(EXIT_FAILURE);
+        }
+        if (fread(users->items, sizeof(User), count, f) != count) {
+            free(users->items);
+            users->items = NULL;
+            users->count = 0;
+            users->capacity = 0;
+            fclose(f);
+            return;
+        }
+    }
+    users->count = count;
+    users->capacity = count;
+    fclose(f);
+}
+
+void users_save(const UserList *users, const char *path) {
+    FILE *f = fopen(path, "wb");
+    if (!f) {
+        return;
+    }
+    fwrite(&users->count, sizeof(size_t), 1, f);
+    if (users->count > 0 && users->items) {
+        fwrite(users->items, sizeof(User), users->count, f);
+    }
+    fclose(f);
+}
 
 void userlist_free(UserList *users) {
     free(users->items);
