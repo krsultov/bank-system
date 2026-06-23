@@ -72,7 +72,17 @@ int register_user(Bank *bank, const char *name, const char *pass) {
     return 1;
 }
 
-int login_user(const UserList *users, const char *name, const char *pass) { (void)users; (void)name; (void)pass; return -1; }
+int login_user(const UserList *users, const char *name, const char *pass) {
+    int idx = users_find_by_name(users, name);
+    if (idx == -1) {
+        return -1;
+    }
+    unsigned long hash = hash_password(pass);
+    if (users->items[idx].passwordHash == hash) {
+        return users->items[idx].id;
+    }
+    return -1;
+}
 void users_load(UserList *users, const char *path) {
     users->items = NULL;
     users->count = 0;
@@ -146,7 +156,19 @@ void menu_register(Bank *bank) {
 }
 
 int menu_login(Bank *bank) {
-    (void)bank;
-    printf("[Логин] Все още не е имплементирано (Eva).\n");
-    return -1;
+    char name[64];
+    char pass[64];
+
+    printf("Потребителско име: ");
+    read_line(name, sizeof(name));
+    printf("Парола: ");
+    read_line(pass, sizeof(pass));
+
+    int id = login_user(&bank->users, name, pass);
+    if (id >= 0) {
+        printf("Влизането е успешно!\n");
+    } else {
+        printf("Грешна парола или потребителско име.\n");
+    }
+    return id;
 }
