@@ -3,6 +3,8 @@
 #include <string.h>
 
 #include "user.h"
+#include "account.h"
+#include "util.h"
 
 unsigned long hash_password(const char *password) {
     unsigned long hash = 5381;
@@ -48,7 +50,28 @@ int users_next_id(const UserList *users) {
     return max_id + 1;
 }
 
-int register_user(Bank *bank, const char *name, const char *pass) { (void)bank; (void)name; (void)pass; return 0; }
+int register_user(Bank *bank, const char *name, const char *pass) {
+    if (users_find_by_name(&bank->users, name) != -1) {
+        return 0;
+    }
+
+    User u;
+    u.id = users_next_id(&bank->users);
+    strncpy(u.username, name, sizeof(u.username) - 1);
+    u.username[sizeof(u.username) - 1] = '\0';
+    u.passwordHash = hash_password(pass);
+
+    userlist_add(&bank->users, u);
+
+    Account a = account_create(&bank->accounts, u.id);
+    accountlist_add(&bank->accounts, a);
+
+    users_save(&bank->users, USERS_FILE);
+    accounts_save(&bank->accounts, ACCOUNTS_FILE);
+
+    return 1;
+}
+
 int login_user(const UserList *users, const char *name, const char *pass) { (void)users; (void)name; (void)pass; return -1; }
 void users_load(UserList *users, const char *path) {
     users->items = NULL;
@@ -107,8 +130,19 @@ void userlist_free(UserList *users) {
 }
 
 void menu_register(Bank *bank) {
-    (void)bank;
-    printf("[Регистрация] Все още не е имплементирано (Eva).\n");
+    char name[64];
+    char pass[64];
+
+    printf("Потребителско име: ");
+    read_line(name, sizeof(name));
+    printf("Парола: ");
+    read_line(pass, sizeof(pass));
+
+    if (register_user(bank, name, pass)) {
+        printf("Регистрацията е успешна!\n");
+    } else {
+        printf("Грешка: Потребител с това име вече съществува.\n");
+    }
 }
 
 int menu_login(Bank *bank) {
