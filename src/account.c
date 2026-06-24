@@ -4,6 +4,7 @@
 #include <string.h>
 
 #include "account.h"
+#include "util.h"
 
 void accountlist_add(AccountList *accounts, Account a) {
     if (accounts->count >= accounts->capacity) {
@@ -103,10 +104,60 @@ void accountlist_free(AccountList *accounts) {
     accounts->capacity = 0;
 }
 
-/* deposit/withdraw operations are added in the next commit */
+int deposit(Account *acc, double amount) {
+    if (amount <= 0) {
+        return 0;
+    }
+    acc->balance += amount;
+    return 1;
+}
 
-int deposit(Account *acc, double amount) { (void)acc; (void)amount; return 0; }
-int withdraw(Account *acc, double amount) { (void)acc; (void)amount; return 0; }
+int withdraw(Account *acc, double amount) {
+    if (amount <= 0 || amount > acc->balance) {
+        return 0;
+    }
+    acc->balance -= amount;
+    return 1;
+}
 
-void menu_deposit(Bank *bank, const char *accountNumber) { (void)bank; (void)accountNumber; printf("[Депозит] Заготовка.\n"); }
-void menu_withdraw(Bank *bank, const char *accountNumber) { (void)bank; (void)accountNumber; printf("[Теглене] Заготовка.\n"); }
+void menu_deposit(Bank *bank, const char *accountNumber) {
+    int idx = accounts_find_by_number(&bank->accounts, accountNumber);
+    if (idx < 0) {
+        printf("Грешка: сметката не е намерена.\n");
+        return;
+    }
+
+    printf("Сума за депозит: ");
+    double amount;
+    if (!read_amount(&amount)) {
+        printf("Грешка: невалидна сума.\n");
+        return;
+    }
+
+    deposit(&bank->accounts.items[idx], amount);
+    accounts_save(&bank->accounts, ACCOUNTS_FILE);
+    printf("Успешен депозит. Нов баланс: %.2f\n", bank->accounts.items[idx].balance);
+}
+
+void menu_withdraw(Bank *bank, const char *accountNumber) {
+    int idx = accounts_find_by_number(&bank->accounts, accountNumber);
+    if (idx < 0) {
+        printf("Грешка: сметката не е намерена.\n");
+        return;
+    }
+
+    printf("Сума за теглене: ");
+    double amount;
+    if (!read_amount(&amount)) {
+        printf("Грешка: невалидна сума.\n");
+        return;
+    }
+
+    if (!withdraw(&bank->accounts.items[idx], amount)) {
+        printf("Грешка: недостатъчен баланс.\n");
+        return;
+    }
+
+    accounts_save(&bank->accounts, ACCOUNTS_FILE);
+    printf("Успешно теглене. Нов баланс: %.2f\n", bank->accounts.items[idx].balance);
+}
