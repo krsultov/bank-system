@@ -122,4 +122,35 @@ void menu_transfer(Bank *bank, const char *accountNumber) {
     transactions_save(&bank->queue, TRANSACTIONS_FILE);
     printf("Трансферът е добавен в опашката за обработка.\n");
 }
-void process_transactions(Bank *bank) { (void)bank; printf("[Обработка] Заготовка.\n"); }
+void process_transactions(Bank *bank) {
+    if (txqueue_is_empty(&bank->queue)) {
+        printf("Няма чакащи транзакции.\n");
+        return;
+    }
+
+    int processed = 0;
+    int failed = 0;
+    Transaction tx;
+    while (txqueue_dequeue(&bank->queue, &tx)) {
+        int from = accounts_find_by_number(&bank->accounts, tx.fromAccount);
+        int to = accounts_find_by_number(&bank->accounts, tx.toAccount);
+
+        if (from < 0 || to < 0) {
+            printf("Пропусната транзакция %s->%s: липсва сметка.\n", tx.fromAccount, tx.toAccount);
+            failed++;
+            continue;
+        }
+
+        if (withdraw(&bank->accounts.items[from], tx.amount)) {
+            deposit(&bank->accounts.items[to], tx.amount);
+            processed++;
+        } else {
+            printf("Пропусната транзакция %s->%s: недостатъчен баланс.\n", tx.fromAccount, tx.toAccount);
+            failed++;
+        }
+    }
+
+    accounts_save(&bank->accounts, ACCOUNTS_FILE);
+    transactions_save(&bank->queue, TRANSACTIONS_FILE);
+    printf("Обработени: %d, пропуснати: %d.\n", processed, failed);
+}
