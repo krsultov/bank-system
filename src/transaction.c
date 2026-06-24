@@ -1,8 +1,11 @@
 /* Transaction queue, transfer and processing - Krum. */
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "transaction.h"
+#include "account.h"
+#include "util.h"
 
 void txqueue_init(TxQueue *q) { q->head = NULL; q->tail = NULL; }
 
@@ -86,5 +89,37 @@ void transactions_load(TxQueue *q, const char *path) {
     fclose(f);
 }
 
-void menu_transfer(Bank *bank, const char *accountNumber) { (void)bank; (void)accountNumber; printf("[Трансфер] Заготовка.\n"); }
+void menu_transfer(Bank *bank, const char *accountNumber) {
+    printf("Номер на получаваща сметка: ");
+    char target[16];
+    read_line(target, sizeof(target));
+
+    if (accounts_find_by_number(&bank->accounts, target) < 0) {
+        printf("Грешка: сметката не съществува.\n");
+        return;
+    }
+    if (strcmp(target, accountNumber) == 0) {
+        printf("Грешка: не може да превеждате към собствената си сметка.\n");
+        return;
+    }
+
+    printf("Сума за трансфер: ");
+    double amount;
+    if (!read_amount(&amount)) {
+        printf("Грешка: невалидна сума.\n");
+        return;
+    }
+
+    Transaction tx;
+    strcpy(tx.opCode, "TRANSFER");
+    tx.amount = amount;
+    strncpy(tx.fromAccount, accountNumber, sizeof(tx.fromAccount) - 1);
+    tx.fromAccount[sizeof(tx.fromAccount) - 1] = '\0';
+    strncpy(tx.toAccount, target, sizeof(tx.toAccount) - 1);
+    tx.toAccount[sizeof(tx.toAccount) - 1] = '\0';
+
+    txqueue_enqueue(&bank->queue, tx);
+    transactions_save(&bank->queue, TRANSACTIONS_FILE);
+    printf("Трансферът е добавен в опашката за обработка.\n");
+}
 void process_transactions(Bank *bank) { (void)bank; printf("[Обработка] Заготовка.\n"); }
