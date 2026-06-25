@@ -17,6 +17,7 @@ void accounts_load(AccountList *accounts, const char *path);
 void accounts_save(const AccountList *accounts, const char *path);
 void accountlist_free(AccountList *accounts);
 
+void menu_account_info(Bank *bank, const char *accountNumber);
 void menu_deposit(Bank *bank, const char *accountNumber);
 void menu_withdraw(Bank *bank, const char *accountNumber);
 

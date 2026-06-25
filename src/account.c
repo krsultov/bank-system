@@ -120,6 +120,17 @@ int withdraw(Account *acc, double amount) {
     return 1;
 }
 
+void menu_account_info(Bank *bank, const char *accountNumber) {
+    int idx = accounts_find_by_number(&bank->accounts, accountNumber);
+    if (idx < 0) {
+        printf("Грешка: сметката не е намерена.\n");
+        return;
+    }
+
+    printf("Номер на сметка: %s\n", bank->accounts.items[idx].number);
+    printf("Баланс: %.2f\n", bank->accounts.items[idx].balance);
+}
+
 void menu_deposit(Bank *bank, const char *accountNumber) {
     int idx = accounts_find_by_number(&bank->accounts, accountNumber);
     if (idx < 0) {

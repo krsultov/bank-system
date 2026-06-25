@@ -19,11 +19,12 @@ static void print_main_menu(void) {
 
 static void print_session_menu(const char *username) {
     printf("\n----- Здравейте, %s -----\n", username);
-    printf("1. Депозит\n");
-    printf("2. Теглене\n");
-    printf("3. Трансфер\n");
-    printf("4. Обработка на транзакции\n");
-    printf("5. Логаут\n");
+    printf("1. Информация за сметката\n");
+    printf("2. Депозит\n");
+    printf("3. Теглене\n");
+    printf("4. Трансфер\n");
+    printf("5. Обработка на транзакции\n");
+    printf("6. Логаут\n");
     printf("Изберете опция: ");
 }
 
@@ -52,14 +53,16 @@ static void session_loop(Bank *bank, int userId) {
         read_line(choice, sizeof(choice));
 
         if (strcmp(choice, "1") == 0) {
-            menu_deposit(bank, accountNumber);
+            menu_account_info(bank, accountNumber);
         } else if (strcmp(choice, "2") == 0) {
-            menu_withdraw(bank, accountNumber);
+            menu_deposit(bank, accountNumber);
         } else if (strcmp(choice, "3") == 0) {
-            menu_transfer(bank, accountNumber);
+            menu_withdraw(bank, accountNumber);
         } else if (strcmp(choice, "4") == 0) {
-            process_transactions(bank);
+            menu_transfer(bank, accountNumber);
         } else if (strcmp(choice, "5") == 0) {
+            process_transactions(bank);
+        } else if (strcmp(choice, "6") == 0) {
             printf("Излизане от профила...\n");
             running = 0;
         } else {
